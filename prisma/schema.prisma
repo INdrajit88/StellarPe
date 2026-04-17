@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  MERCHANT
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionStatus {
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                  String        @id @default(cuid())
+  username            String        @unique
+  email               String        @unique
+  passwordHash        String
+  role                Role          @default(USER)
+  status              AccountStatus @default(ACTIVE)
+  pinHash             String?
+  failedPinAttempts   Int           @default(0)
+  pinLockedUntil      DateTime?
+  failedLoginAttempts Int           @default(0)
+  loginLockedUntil    DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  wallet              Wallet?
+  merchantProfile     MerchantProfile?
+  contacts            Contact[]
+  sentTransactions    Transaction[] @relation("sender")
+  receivedTransactions Transaction[] @relation("recipient")
+
+  @@index([username])
+  @@index([email])
+}
+
+model Wallet {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  stellarAddress     String   @unique
+  encryptedSecretKey String
+  encryptionIV       String
+  authTag            String
+  createdAt          DateTime @default(now())
+
+  user               User     @relation(fields: [userId], references: [id])
+
+  @@index([stellarAddress])
+}
+
+model Transaction {
+  id               String            @id @default(cuid())
+  stellarTxId      String?           @unique
+  senderAddress    String
+  recipientAddress String
+  senderId         String?
+  recipientId      String?
+  amount           Decimal           @db.Decimal(20, 7)
+  memo             String?
+  status           TransactionStatus
+  errorReason      String?
+  createdAt        DateTime          @default(now())
+
+  sender           User?             @relation("sender", fields: [senderId], references: [id])
+  recipient        User?             @relation("recipient", fields: [recipientId], references: [id])
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([createdAt])
+  @@index([senderAddress])
+  @@index([recipientAddress])
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  userId         String
+  displayName    String
+  stellarAddress String?
+  username       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, stellarAddress])
+  @@unique([userId, username])
+  @@index([userId])
+}
+
+model MerchantProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  businessName String
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id])
+}
