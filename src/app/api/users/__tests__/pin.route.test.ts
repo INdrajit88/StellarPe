@@ -171,14 +171,12 @@ describe('POST /api/users/pin (set PIN)', () => {
     expect(mockSetPin).not.toHaveBeenCalled();
   });
 
-  it('returns 403 for MERCHANT role', async () => {
+  it('allows MERCHANT role to set PIN', async () => {
+    mockSetPin.mockResolvedValueOnce(undefined);
     const request = buildPostRequest({ pin: '1234' }, { role: 'MERCHANT' });
     const response = await POST(request);
 
-    expect(response.status).toBe(403);
-    const data = await response.json();
-    expect(data.error).toContain('Forbidden');
-    expect(mockSetPin).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
   it('returns 403 for ADMIN role', async () => {
@@ -284,14 +282,12 @@ describe('PUT /api/users/pin (reset PIN)', () => {
     expect(mockResetPin).not.toHaveBeenCalled();
   });
 
-  it('returns 403 for MERCHANT role', async () => {
+  it('allows MERCHANT role to reset PIN', async () => {
+    mockResetPin.mockResolvedValueOnce(undefined);
     const request = buildPutRequest({ newPin: '5678' }, { role: 'MERCHANT' });
     const response = await PUT(request);
 
-    expect(response.status).toBe(403);
-    const data = await response.json();
-    expect(data.error).toContain('Forbidden');
-    expect(mockResetPin).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
   it('returns 403 for ADMIN role', async () => {
