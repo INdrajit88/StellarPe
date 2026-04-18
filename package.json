@@ -15,6 +15,7 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@stellar/stellar-sdk": "^15.0.1",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "html5-qrcode": "^2.3.8",
