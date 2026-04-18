@@ -31,7 +31,6 @@ import {
   simulateContract,
   nativeToScVal,
   scValToNative,
-  xdr,
 } from './contract.service';
 import type { SubContractAuth } from './contract.service';
 import { Address } from '@stellar/stellar-sdk';

@@ -23,7 +23,6 @@ import {
   simulateContract,
   nativeToScVal,
   scValToNative,
-  xdr,
 } from './contract.service';
 import { Address } from '@stellar/stellar-sdk';
 import fs from 'fs';
