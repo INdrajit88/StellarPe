@@ -51,29 +51,61 @@ export default function ScanPage() {
         const token = localStorage.getItem('token');
         const csrfToken = generateCsrfToken();
 
-        const res = await fetch('/api/qr/parse', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            'x-csrf-token': csrfToken,
-          },
-          body: JSON.stringify({ data: decodedText }),
-        });
+        // Try to parse the QR data locally first.
+        // If it's valid JSON with an address field, use the parse API.
+        // If it's a raw string (e.g. a Stellar address or wallet ID), use it directly.
+        let address: string | undefined;
+        let amount: string | undefined;
+        let memo: string | undefined;
 
-        const data = await res.json();
+        try {
+          const parsed = JSON.parse(decodedText);
+          if (parsed && typeof parsed === 'object' && typeof parsed.address === 'string') {
+            // Valid JSON QR payload — use the parse API for full validation
+            const res = await fetch('/api/qr/parse', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+                'x-csrf-token': csrfToken,
+              },
+              body: JSON.stringify({ data: decodedText }),
+            });
 
-        if (!res.ok) {
-          setError(data.error || 'Invalid QR code. Please try again.');
-          setParsing(false);
-          return;
+            const data = await res.json();
+
+            if (!res.ok) {
+              setError(data.error || 'Invalid QR code. Please try again.');
+              setParsing(false);
+              return;
+            }
+
+            address = data.address;
+            amount = data.amount;
+            memo = data.description;
+          } else {
+            // JSON but no address field — treat as invalid
+            setError('Invalid QR code format. Please try again.');
+            setParsing(false);
+            return;
+          }
+        } catch {
+          // Not valid JSON — treat the raw text as a wallet ID / Stellar address
+          const trimmed = decodedText.trim();
+          if (trimmed.length > 0) {
+            address = trimmed;
+          } else {
+            setError('Empty QR code. Please try again.');
+            setParsing(false);
+            return;
+          }
         }
 
         // Navigate to send page with pre-populated data
         const params = new URLSearchParams();
-        if (data.address) params.set('recipient', data.address);
-        if (data.amount) params.set('amount', data.amount);
-        if (data.description) params.set('memo', data.description);
+        if (address) params.set('recipient', address);
+        if (amount) params.set('amount', amount);
+        if (memo) params.set('memo', memo);
 
         router.push(`/user/send?${params.toString()}`);
       } catch {

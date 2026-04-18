@@ -89,11 +89,11 @@ describe('Bug Condition Exploration', () => {
     it('ProfileCard QR value should be parseable by parseQRPayload for any valid Stellar address', () => {
       fc.assert(
         fc.property(stellarAddressArb, (address: string) => {
-          // Render ProfileCard and extract the value passed to QRCodeDisplay
+          // Render ProfileCard — in production, walletId IS the stellarAddress
           const { container, unmount } = render(
             React.createElement(ProfileCard, {
               username: 'testuser',
-              walletId: 'wallet-123',
+              walletId: address,
               stellarAddress: address,
             })
           );

@@ -52,9 +52,9 @@ export function ProfileCard({ username, walletId, stellarAddress }: ProfileCardP
           <CopyButton value={walletId} label="Copy Wallet ID" />
         </div>
 
-        {/* QR Code encoding the Stellar address */}
+        {/* QR Code encoding the wallet ID (Stellar address) */}
         <div ref={qrRef} className="mt-2">
-          <QRCodeDisplay value={stellarAddress ? JSON.stringify({ address: stellarAddress }) : ''} size={200} />
+          <QRCodeDisplay value={walletId ? JSON.stringify({ address: walletId }) : ''} size={200} />
         </div>
 
         {/* QR Download Button */}
