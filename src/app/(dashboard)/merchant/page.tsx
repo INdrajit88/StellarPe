@@ -256,9 +256,17 @@ export default function MerchantDashboardPage() {
 
       {/* Custom Tokens (Requirement 10.1) */}
       <Card className="mt-6">
-        <h2 className="mb-3 text-base font-semibold text-gray-900">
-          Custom Tokens
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-900">
+            Custom Tokens
+          </h2>
+          <Link
+            href="/merchant/tokens"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Manage
+          </Link>
+        </div>
         {tokenBalancesLoading ? (
           <div className="space-y-3 py-2">
             {[1, 2, 3].map((i) => (
@@ -281,9 +289,17 @@ export default function MerchantDashboardPage() {
 
       {/* LP Positions (Requirement 10.2) */}
       <Card className="mt-6">
-        <h2 className="mb-3 text-base font-semibold text-gray-900">
-          Liquidity Pool Positions
-        </h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-gray-900">
+            Liquidity Pool Positions
+          </h2>
+          <Link
+            href="/merchant/pools"
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Manage
+          </Link>
+        </div>
         {lpPositionsLoading ? (
           <div className="space-y-3 py-2">
             {[1, 2, 3].map((i) => (

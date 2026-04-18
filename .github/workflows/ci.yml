@@ -10,6 +10,13 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/stellarpay_test
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-jwt-secret-not-for-production' }}
+      ENCRYPTION_MASTER_KEY: ${{ secrets.ENCRYPTION_MASTER_KEY || 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2' }}
+      HORIZON_URL: ${{ secrets.HORIZON_URL || 'https://horizon-testnet.stellar.org' }}
+      STELLAR_NETWORK_PASSPHRASE: ${{ secrets.STELLAR_NETWORK_PASSPHRASE || 'Test SDF Network ; September 2015' }}
+
     services:
       postgres:
         image: postgres:16
@@ -56,12 +63,6 @@ jobs:
 
       - name: Run tests
         run: npm test -- --run
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          ENCRYPTION_MASTER_KEY: ${{ secrets.ENCRYPTION_MASTER_KEY }}
-          HORIZON_URL: ${{ secrets.HORIZON_URL }}
-          STELLAR_NETWORK_PASSPHRASE: ${{ secrets.STELLAR_NETWORK_PASSPHRASE }}
 
       - name: Build
         run: npm run build
