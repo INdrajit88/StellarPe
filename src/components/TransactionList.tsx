@@ -1,5 +1,7 @@
 'use client';
 
+import { CopyButton } from '@/components/CopyButton';
+
 /**
  * Transaction type matching the API response shape from /api/payments/history.
  */
@@ -95,9 +97,12 @@ export function TransactionList({
 
               {/* Transaction ID */}
               {tx.stellarTxId && (
-                <p className="truncate text-xs text-gray-400" title={tx.stellarTxId}>
-                  TX: {tx.stellarTxId.slice(0, 12)}...
-                </p>
+                <div className="flex items-center gap-1">
+                  <p className="truncate text-xs text-gray-400" title={tx.stellarTxId}>
+                    TX: {tx.stellarTxId.slice(0, 12)}...
+                  </p>
+                  <CopyButton value={tx.stellarTxId} label="Copy transaction ID" />
+                </div>
               )}
             </div>
 

@@ -231,13 +231,13 @@ export function BottomNav({ role }: BottomNavProps) {
           const active = isActiveRoute(pathname, item.href);
 
           return (
-            <li key={item.href}>
+            <li key={item.href} className="flex-1">
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 aria-label={item.label}
                 className={`
-                  flex flex-col items-center justify-center px-2 py-2 text-xs font-medium
+                  flex flex-col items-center justify-center px-2 py-3 text-xs font-medium
                   transition-colors duration-150
                   ${
                     active
@@ -246,7 +246,7 @@ export function BottomNav({ role }: BottomNavProps) {
                   }
                 `}
               >
-                {item.icon}
+                <span className="flex h-6 w-6 items-center justify-center">{item.icon}</span>
                 <span className="mt-1">{item.label}</span>
               </Link>
             </li>

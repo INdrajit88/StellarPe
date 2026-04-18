@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PinInput, PinInputHandle } from '@/components/ui/PinInput';
+import { ProfileCard } from '@/components/ProfileCard';
 
 /** CSRF token generator for state-mutating requests */
 function generateCsrfToken(): string {
@@ -23,12 +24,14 @@ interface UserInfo {
 
 /**
  * User Profile page.
- * Displays user info (username, email, role) and PIN management:
+ * Displays ProfileCard (username, wallet ID, QR code, download button)
+ * and PIN management:
  * - Set PIN section (if no PIN set)
  * - Reset PIN section (if PIN already set)
  *
  * @see Requirements 4.1 (set 4-6 digit PIN), 4.6 (PIN reset),
- *      4.7 (invalidate sessions on PIN change)
+ *      4.7 (invalidate sessions on PIN change),
+ *      13.1, 13.2, 13.3, 13.4 (profile enhancements)
  */
 export default function ProfilePage() {
   const router = useRouter();
@@ -36,6 +39,10 @@ export default function ProfilePage() {
 
   const [user, setUser] = useState<UserInfo | null>(null);
   const [hasPinSet, setHasPinSet] = useState(false);
+
+  // Wallet state
+  const [stellarAddress, setStellarAddress] = useState('');
+  const [walletLoading, setWalletLoading] = useState(true);
 
   // PIN form state
   const [pin, setPin] = useState('');
@@ -55,6 +62,29 @@ export default function ProfilePage() {
         // ignore
       }
     }
+  }, []);
+
+  // Fetch wallet data to get the Stellar address
+  useEffect(() => {
+    async function fetchWallet() {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/wallet', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setStellarAddress(data.stellarAddress || '');
+        }
+      } catch {
+        // Wallet fetch failed — address will remain empty
+      } finally {
+        setWalletLoading(false);
+      }
+    }
+
+    fetchWallet();
   }, []);
 
   async function handleSetPin(pinValue: string) {
@@ -161,33 +191,34 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-lg px-4 py-6 sm:px-6">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">Profile</h1>
 
-      {/* User Info */}
+      {/* Profile Card with username, wallet ID, QR code, and download button */}
+      {walletLoading ? (
+        <div className="glass-card mb-6 p-6">
+          <div className="flex flex-col items-center gap-4 animate-pulse">
+            <div className="h-16 w-16 rounded-full bg-gray-600" />
+            <div className="h-5 w-32 rounded bg-gray-600" />
+            <div className="h-4 w-48 rounded bg-gray-600" />
+            <div className="h-[200px] w-[200px] rounded bg-gray-600" />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <ProfileCard
+            username={user?.username || '—'}
+            walletId={stellarAddress}
+            stellarAddress={stellarAddress}
+          />
+        </div>
+      )}
+
+      {/* User details (email, role, PIN status) */}
       <Card className="mb-6">
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-indigo-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-gray-900">
-                {user?.username || '—'}
-              </p>
-              <p className="text-sm text-gray-500">{user?.email || '—'}</p>
-            </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Email</span>
+            <span className="font-medium text-gray-900">
+              {user?.email || '—'}
+            </span>
           </div>
 
           <div className="border-t border-gray-100 pt-3">

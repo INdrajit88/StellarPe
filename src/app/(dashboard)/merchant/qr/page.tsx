@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
+import { QRDownloadButton } from '@/components/QRDownloadButton';
+import { CopyButton } from '@/components/CopyButton';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -23,6 +25,8 @@ function generateCsrfToken(): string {
 export default function MerchantQRPage() {
   const [stellarAddress, setStellarAddress] = useState('');
   const [walletLoading, setWalletLoading] = useState(true);
+  const staticQrRef = useRef<HTMLDivElement>(null);
+  const dynamicQrRef = useRef<HTMLDivElement>(null);
 
   // Dynamic QR form state
   const [amount, setAmount] = useState('');
@@ -131,18 +135,29 @@ export default function MerchantQRPage() {
           ) : (
             /* Encode the Stellar address as JSON matching QRService format
                so the QR parser can decode it correctly. */
-            <QRCodeDisplay
-              value={stellarAddress ? JSON.stringify({ address: stellarAddress }) : ''}
-              size={200}
-            />
+            <div ref={staticQrRef}>
+              <QRCodeDisplay
+                value={stellarAddress ? JSON.stringify({ address: stellarAddress }) : ''}
+                size={200}
+              />
+            </div>
           )}
           {stellarAddress && (
-            <p
-              className="max-w-full truncate text-xs text-gray-400"
-              title={stellarAddress}
-            >
-              {stellarAddress.slice(0, 12)}...{stellarAddress.slice(-12)}
-            </p>
+            <div className="flex items-center gap-1">
+              <p
+                className="max-w-full truncate text-xs text-gray-400"
+                title={stellarAddress}
+              >
+                {stellarAddress.slice(0, 12)}...{stellarAddress.slice(-12)}
+              </p>
+              <CopyButton value={stellarAddress} label="Copy Stellar address" />
+            </div>
+          )}
+          {stellarAddress && !walletLoading && (
+            <QRDownloadButton
+              qrRef={staticQrRef}
+              filename="stellarpe-static-qr"
+            />
           )}
         </div>
       </Card>
@@ -197,7 +212,9 @@ export default function MerchantQRPage() {
 
           {dynamicQRData && (
             <div className="flex flex-col items-center gap-3 pt-4">
-              <QRCodeDisplay value={dynamicQRData} size={200} />
+              <div ref={dynamicQrRef}>
+                <QRCodeDisplay value={dynamicQRData} size={200} />
+              </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-900">
                   {parseFloat(amount).toLocaleString(undefined, {
@@ -210,6 +227,10 @@ export default function MerchantQRPage() {
                   <p className="text-xs text-gray-500">{description}</p>
                 )}
               </div>
+              <QRDownloadButton
+                qrRef={dynamicQrRef}
+                filename="stellarpe-dynamic-qr"
+              />
             </div>
           )}
         </div>

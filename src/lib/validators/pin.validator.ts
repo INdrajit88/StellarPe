@@ -16,5 +16,14 @@ export const resetPinSchema = z.object({
   newPin: z.string().regex(/^\d{4,6}$/, 'PIN must be 4-6 numeric digits'),
 });
 
+/**
+ * PIN verify schema.
+ * Accepts a PIN string (4-6 numeric digits) for verification.
+ */
+export const verifyPinSchema = z.object({
+  pin: z.string().regex(/^\d{4,6}$/, 'PIN must be 4-6 numeric digits'),
+});
+
 export type SetPinInput = z.infer<typeof setPinSchema>;
 export type ResetPinInput = z.infer<typeof resetPinSchema>;
+export type VerifyPinInput = z.infer<typeof verifyPinSchema>;
