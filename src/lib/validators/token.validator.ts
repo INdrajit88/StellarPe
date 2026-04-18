@@ -27,7 +27,7 @@ export const createTokenSchema = z.object({
     .string()
     .min(1, 'Initial supply is required')
     .regex(/^\d+$/, 'Initial supply must be a numeric string')
-    .refine((val) => BigInt(val) > 0n, {
+    .refine((val) => BigInt(val) > BigInt(0), {
       message: 'Initial supply must be positive',
     }),
 });

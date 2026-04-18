@@ -9,7 +9,7 @@ const positiveAmountString = (fieldName: string) =>
     .string()
     .min(1, `${fieldName} is required`)
     .regex(/^\d+$/, `${fieldName} must be a numeric string`)
-    .refine((val) => BigInt(val) > 0n, {
+    .refine((val) => BigInt(val) > BigInt(0), {
       message: `${fieldName} must be positive`,
     });
 

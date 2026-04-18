@@ -5,13 +5,14 @@
 <h1 align="center">⚡ StellarPay</h1>
 
 <p align="center">
-  <strong>A custodial payment platform built on the Stellar blockchain</strong><br/>
-  Send XLM instantly via username or QR code — no browser extension required.
+  <strong>A custodial payment platform built on the Stellar blockchain with Soroban smart contract integration</strong><br/>
+  Send XLM instantly via username or QR code, create custom tokens, and manage liquidity pools — no browser extension required.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
   <img src="https://img.shields.io/badge/Stellar-SDK%20v15-blue?logo=stellar" alt="Stellar SDK v15" />
+  <img src="https://img.shields.io/badge/Soroban-Smart%20Contracts-orange" alt="Soroban" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Prisma-7-purple?logo=prisma" alt="Prisma 7" />
   <img src="https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss" alt="Tailwind CSS 4" />
@@ -22,7 +23,9 @@
 ## 📖 Table of Contents
 
 - [Overview](#overview)
+- [Features](#-features)
 - [Architecture](#architecture)
+- [Soroban Smart Contract Integration](#-soroban-smart-contract-integration)
 - [Payment Flow](#-payment-flow)
 - [Wallet & Stellar Integration](#-wallet--stellar-integration)
 - [Security Model](#-security-model)
@@ -30,8 +33,10 @@
 - [Real-Time Notifications](#-real-time-notifications)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
+- [Deployment](#-deployment)
 - [API Reference](#-api-reference)
 - [Project Structure](#-project-structure)
+- [Testing](#-testing)
 - [Viewing Transactions on Chain](#-viewing-transactions-on-chain)
 
 ---
@@ -40,7 +45,42 @@
 
 StellarPay is a full-stack custodial payment application that lets users send and receive XLM (Stellar Lumens) through a mobile-first web interface. Users can pay via username lookup, Stellar address, or by scanning QR codes — all without needing a browser wallet extension.
 
+Beyond basic payments, StellarPay integrates with **Soroban** (Stellar's smart contract platform) to enable custom token creation, liquidity pool management, and inter-contract calls — bringing DeFi capabilities to a user-friendly interface.
+
 The platform handles key management server-side using AES-256-GCM encryption, so users interact with a familiar username/PIN experience while transactions settle on the Stellar blockchain in ~5 seconds.
+
+---
+
+## ✨ Features
+
+### Core Payments
+- **Instant XLM transfers** via username or Stellar address
+- **QR code payments** — static (address only) and dynamic (address + amount)
+- **Real-time notifications** via Server-Sent Events (SSE)
+- **Transaction history** with filtering and pagination
+
+### Soroban Smart Contracts
+- **Contract deployment** — deploy pre-compiled WASM binaries to Stellar testnet
+- **Contract invocation** — call smart contract functions with XDR serialization
+- **Inter-contract calls** — authorize cross-contract invocations with sub-contract auth trees
+- **Read-only simulation** — query contract state without submitting transactions
+
+### Custom Tokens (SEP-41)
+- **Token creation** — merchants deploy SEP-41 token contracts with name, symbol, decimals, and initial supply
+- **Balance queries** — real-time token balance lookups via Soroban RPC
+- **Dashboard display** — token balances shown on user and merchant dashboards
+
+### Liquidity Pools
+- **Pool deployment** — deploy constant-product AMM contracts
+- **Deposit/Withdraw** — add or remove liquidity with LP share tracking
+- **Token swaps** — swap tokens with slippage protection (simulates before submitting)
+- **0.3% swap fee** — fees remain in pool reserves for liquidity providers
+
+### Platform
+- **Role-based access** — User, Merchant, and Admin roles
+- **Mobile-first design** — responsive from 320px to 1440px with bottom navigation
+- **CI/CD pipeline** — GitHub Actions with lint, test, build, and auto-deploy to Vercel
+- **Admin panel** — user management, platform stats, account activation/deactivation
 
 ---
 
@@ -53,6 +93,10 @@ The platform handles key management server-side using AES-256-GCM encryption, so
 │  │  Login/  │  │  Wallet  │  │   Send   │  │  QR Scanner/  │   │
 │  │ Register │  │Dashboard │  │ Payment  │  │   Generator   │   │
 │  └──────────┘  └──────────┘  └──────────┘  └───────────────┘   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                      │
+│  │  Token   │  │    LP    │  │ Contract │                      │
+│  │ Balances │  │Positions │  │  Deploy  │                      │
+│  └──────────┘  └──────────┘  └──────────┘                      │
 └────────────────────────────┬────────────────────────────────────┘
                              │ HTTPS + JWT Bearer Token
                              ▼
@@ -73,22 +117,90 @@ The platform handles key management server-side using AES-256-GCM encryption, so
 │  │ Service  │  │ Service  │  │ Service  │  │   Service    │    │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────────┘    │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐    │
-│  │   PIN    │  │Encryption│  │ Stellar  │  │Notification  │    │
+│  │ Contract │  │  Token   │  │   Pool   │  │Notification  │    │
 │  │ Service  │  │ Service  │  │ Service  │  │   Service    │    │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────────┘    │
 └────────────────────────────┬────────────────────────────────────┘
                              │
-              ┌──────────────┼──────────────┐
-              ▼              ▼              ▼
+         ┌───────────────────┼───────────────────┐
+         ▼                   ▼                   ▼
 ┌──────────────────┐ ┌─────────────┐ ┌──────────────────┐
-│   PostgreSQL     │ │   Stellar   │ │  Horizon API     │
-│   (Prisma ORM)   │ │  Network    │ │  (SSE Streams)   │
+│   PostgreSQL     │ │   Stellar   │ │  Soroban RPC     │
+│   (Prisma ORM)   │ │  Horizon    │ │  (Smart Contracts)│
 │                  │ │  (Testnet)  │ │                  │
-│  • Users         │ │             │ │  • Balance query │
-│  • Wallets       │ │  • Ledger   │ │  • Tx submission │
-│  • Transactions  │ │  • Accounts │ │  • Payment stream│
-│  • Contacts      │ │  • Payments │ │                  │
+│  • Users         │ │             │ │  • Deploy WASM   │
+│  • Wallets       │ │  • Balance  │ │  • Invoke funcs  │
+│  • Transactions  │ │  • Tx submit│ │  • Simulate      │
+│  • Contracts     │ │  • Streams  │ │  • XDR encode    │
+│  • Tokens        │ │             │ │                  │
+│  • LP Positions  │ │             │ │                  │
+│  • Swaps         │ │             │ │                  │
 └──────────────────┘ └─────────────┘ └──────────────────┘
+```
+
+---
+
+## 🔗 Soroban Smart Contract Integration
+
+### Contract Service
+
+The `ContractService` provides three core operations for interacting with Soroban smart contracts:
+
+```typescript
+// Deploy a pre-compiled WASM binary
+deployContract(wasmBuffer, deployerSecret)
+  → { contractId, transactionHash }
+
+// Invoke a contract function (state-changing)
+invokeContract(contractId, functionName, args, callerSecret, subAuth?)
+  → { transactionHash, returnValue }
+
+// Simulate a contract call (read-only, no tx submitted)
+simulateContract(contractId, functionName, args)
+  → { returnValue }
+```
+
+### Inter-Contract Calls
+
+When a pool contract calls a token contract's `transfer` function during a swap, the transaction must include authorization entries for both contracts:
+
+```typescript
+const subAuth: SubContractAuth[] = [{
+  contractId: tokenContractId,
+  functionName: 'transfer',
+  args: [fromAddress, toAddress, amount],
+  subInvocations: [] // nested calls if needed
+}];
+
+await invokeContract(poolId, 'swap', swapArgs, secret, subAuth);
+```
+
+The service recursively builds `SorobanAuthorizedInvocation` trees and includes them in the transaction envelope.
+
+### Token Creation Flow
+
+```
+Merchant → POST /api/tokens/create
+    │
+    ├─ Deploy SEP-41 WASM binary
+    ├─ Invoke initialize(admin, decimals, name, symbol)
+    ├─ Invoke mint(to, initialSupply)
+    └─ Store metadata in Token table
+         → { contractId, transactionHash }
+```
+
+### Liquidity Pool Swap Flow
+
+```
+User → POST /api/pools/swap
+    │
+    ├─ Verify PIN
+    ├─ Simulate swap (check slippage)
+    │   └─ If output < minOutput → reject (400)
+    ├─ Build subAuth for token transfer
+    ├─ Submit swap transaction
+    └─ Record in SwapTransaction table
+         → { outputAmount, effectiveRate, feeAmount, transactionHash }
 ```
 
 ---
@@ -107,34 +219,26 @@ User initiates payment (username or Stellar address + amount + PIN)
 │ 2. Check sender balance                  │
 │    • Query Horizon for live XLM balance  │
 │    • Verify: balance ≥ amount + 1 XLM   │
-│      (1 XLM = Stellar minimum reserve)   │
 ├─────────────────────────────────────────┤
 │ 3. Verify PIN                            │
 │    • Check lockout status (5 attempts)   │
 │    • bcrypt compare against stored hash  │
-│    • Increment failures on mismatch      │
 ├─────────────────────────────────────────┤
 │ 4. Decrypt sender's secret key           │
 │    • AES-256-GCM decrypt from DB         │
-│    • Key held in memory only for signing │
 ├─────────────────────────────────────────┤
 │ 5. Build & sign Stellar transaction      │
-│    • Load account (sequence number)      │
 │    • Payment operation (native XLM)      │
 │    • Optional text memo                  │
 │    • Sign with Ed25519 keypair           │
 ├─────────────────────────────────────────┤
 │ 6. Submit to Horizon                     │
-│    • 30-second timeout                   │
 │    • Returns transaction hash on success │
 ├─────────────────────────────────────────┤
 │ 7. Record in database                    │
 │    • COMPLETED or FAILED status          │
-│    • Store stellarTxId for chain lookup  │
 ├─────────────────────────────────────────┤
 │ 8. Zero secret key from memory           │
-│    • Overwrite string reference           │
-│    • Original eligible for GC            │
 └─────────────────────────────────────────┘
 ```
 
@@ -142,136 +246,48 @@ User initiates payment (username or Stellar address + amount + PIN)
 
 ## 🔑 Wallet & Stellar Integration
 
-### How Wallets Work
+StellarPay uses a **custodial wallet model** — the server generates and manages Stellar keypairs on behalf of users.
 
-StellarPay uses a **custodial wallet model** — the server generates and manages Stellar keypairs on behalf of users. This eliminates the need for browser extensions or seed phrase management.
-
-| Step | What Happens | Where |
-|------|-------------|-------|
-| **Registration** | User signs up with username/email/password | Client → API |
-| **Keypair Generation** | Ed25519 keypair created via `Keypair.random()` | Server (StellarService) |
-| **Account Funding** | Friendbot funds 10,000 test XLM (testnet) | Server → Stellar Testnet |
-| **Key Encryption** | Secret key encrypted with AES-256-GCM | Server (EncryptionService) |
-| **Storage** | Only public key + encrypted secret stored | PostgreSQL |
-| **Balance Query** | Live balance fetched from Horizon API | Server → Horizon |
-
-### Stellar SDK Usage
-
-```typescript
-// Keypair generation (registration)
-const keypair = Keypair.random();
-// → publicKey: "GABCD..." (56 chars, starts with G)
-// → secretKey: "SABCD..." (56 chars, starts with S)
-
-// Transaction building (payment)
-new TransactionBuilder(senderAccount, { fee: BASE_FEE, networkPassphrase })
-  .addOperation(Operation.payment({
-    destination: recipientPublic,
-    asset: Asset.native(),  // XLM
-    amount: "10.5"
-  }))
-  .addMemo(Memo.text("Coffee payment"))
-  .setTimeout(30)
-  .build();
-
-// Real-time streaming (notifications)
-server.payments().forAccount(publicKey).cursor('now').stream({
-  onmessage: (payment) => { /* notify user via SSE */ }
-});
-```
-
-### Key Encryption Flow
-
-```
-                    ENCRYPTION_MASTER_KEY (env var)
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  HKDF-SHA256    │
-                    │  salt: fixed    │
-                    │  info: context  │
-                    └────────┬────────┘
-                             │
-                    256-bit derived key
-                             │
-              ┌──────────────┼──────────────┐
-              ▼                             ▼
-     ┌─────────────────┐          ┌─────────────────┐
-     │    ENCRYPT       │          │    DECRYPT       │
-     │  AES-256-GCM    │          │  AES-256-GCM    │
-     │  Random 12B IV  │          │  Stored IV      │
-     └────────┬────────┘          └────────┬────────┘
-              │                             │
-              ▼                             ▼
-     ciphertext + IV + authTag      plaintext secret key
-     (stored in DB as hex)          (held in memory only)
-```
+| Step | What Happens |
+|------|-------------|
+| **Registration** | User signs up with username/email/password |
+| **Keypair Generation** | Ed25519 keypair created via `Keypair.random()` |
+| **Account Funding** | Friendbot funds 10,000 test XLM (testnet) |
+| **Key Encryption** | Secret key encrypted with AES-256-GCM |
+| **Storage** | Only public key + encrypted secret stored |
+| **Balance Query** | Live balance fetched from Horizon API |
 
 ---
 
 ## 🛡️ Security Model
 
-| Layer | Mechanism | Details |
-|-------|-----------|---------|
-| **Authentication** | JWT (24h expiry) | Edge middleware decodes, route handlers verify signature |
-| **Authorization** | Role-based (USER, MERCHANT, ADMIN) | Role guard middleware per route |
-| **Transaction Auth** | 4-6 digit PIN + bcrypt (cost 12) | Required before every payment |
-| **Lockout** | 5 failed PINs → 15 min lock | Prevents brute-force PIN guessing |
-| **Key Protection** | AES-256-GCM + HKDF | Secret keys never stored in plaintext |
-| **CSRF** | Token validation on mutations | All POST/PUT/DELETE routes |
-| **Rate Limiting** | Per-user/IP sliding window | Auth: 10/min, Payments: 20/min |
-| **Input Validation** | Zod schemas | Every request body validated |
-| **Memory Safety** | Secret key zeroing | Keys overwritten after signing |
+| Layer | Mechanism |
+|-------|-----------|
+| **Authentication** | JWT (24h expiry) with Edge middleware |
+| **Authorization** | Role-based (USER, MERCHANT, ADMIN) |
+| **Transaction Auth** | 4-6 digit PIN + bcrypt (cost 12) |
+| **Lockout** | 5 failed PINs → 15 min lock |
+| **Key Protection** | AES-256-GCM + HKDF |
+| **CSRF** | Token validation on all mutations |
+| **Rate Limiting** | Per-user/IP sliding window |
+| **Input Validation** | Zod schemas on every request |
 
 ---
 
 ## 📱 QR Code System
 
-StellarPay supports two types of QR codes for payments:
-
-### Static QR
-Encodes only the merchant's Stellar address. The payer enters the amount manually.
-```json
-{ "address": "GABCDEF..." }
-```
-
-### Dynamic QR
-Encodes address + amount + optional description. One-scan payment.
-```json
-{ "address": "GABCDEF...", "amount": "25.00", "description": "Coffee order #42" }
-```
-
-### QR Flow
-```
-Merchant generates QR  →  User scans with camera  →  App parses JSON payload
-                                                            │
-                                                            ▼
-                                                   Pre-fills payment form
-                                                   (address + amount)
-                                                            │
-                                                            ▼
-                                                   User confirms + enters PIN
-                                                            │
-                                                            ▼
-                                                   Payment submitted to Stellar
-```
+- **Static QR** — encodes merchant's Stellar address only
+- **Dynamic QR** — encodes address + amount + description for one-scan payment
+- **Scanner** — camera-based QR reader that pre-fills the payment form
 
 ---
 
 ## 📡 Real-Time Notifications
 
-```
-┌──────────────┐         ┌──────────────────┐         ┌─────────────┐
-│   Stellar    │  SSE    │  NotificationSvc │  SSE    │   Client    │
-│   Horizon    │────────▶│  (Server)        │────────▶│  (Browser)  │
-│              │ stream  │                  │ push    │             │
-│  Payment     │         │  • Record in DB  │         │  • Toast    │
-│  detected    │         │  • Map to userId │         │  • Refresh  │
-│              │         │  • Push to SSE   │         │    balance  │
-└──────────────┘         └──────────────────┘         └─────────────┘
-
-Reconnection: Exponential backoff — min(2^N × 1000ms, 30s)
-```
+- SSE endpoint at `/api/events/stream` pushes `payment_received` events
+- Horizon payment stream monitors inbound transactions
+- Exponential backoff reconnection: `min(2^N × 1000ms, 30s)`
+- One active connection per user (new connection closes previous)
 
 ---
 
@@ -279,16 +295,17 @@ Reconnection: Exponential backoff — min(2^N × 1000ms, 30s)
 
 | Category | Technology |
 |----------|-----------|
-| **Framework** | Next.js 16 (App Router) |
+| **Framework** | Next.js 16 (App Router, Turbopack) |
 | **Language** | TypeScript 5 |
-| **Blockchain** | Stellar SDK v15 + Horizon API |
+| **Blockchain** | Stellar SDK v15 + Soroban RPC |
 | **Database** | PostgreSQL + Prisma 7 ORM |
 | **Styling** | Tailwind CSS 4 |
 | **Auth** | JWT (jsonwebtoken) + bcrypt |
 | **Encryption** | Node.js crypto (AES-256-GCM + HKDF) |
 | **Validation** | Zod 4 |
-| **QR Codes** | qrcode (server) + html5-qrcode (client scanner) |
+| **QR Codes** | qrcode + html5-qrcode |
 | **Testing** | Jest 30 + fast-check (property-based) |
+| **CI/CD** | GitHub Actions + Vercel |
 
 ---
 
@@ -296,9 +313,9 @@ Reconnection: Exponential backoff — min(2^N × 1000ms, 30s)
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - PostgreSQL database
-- npm or yarn
+- npm
 
 ### 1. Clone & Install
 
@@ -317,26 +334,24 @@ cp .env.example .env
 Fill in your `.env`:
 
 ```env
-# PostgreSQL connection string
 DATABASE_URL=postgresql://user:password@localhost:5432/stellarpay
-
-# Secret for signing JWTs (use a strong random string)
 JWT_SECRET=your-jwt-secret-here
-
-# Master key for AES-256-GCM encryption of Stellar secret keys
-# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ENCRYPTION_MASTER_KEY=your-64-char-hex-key
-
-# Stellar network (defaults to testnet)
 STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
 HORIZON_URL=https://horizon-testnet.stellar.org
+SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+```
+
+Generate an encryption key:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 3. Setup Database
 
 ```bash
 npx prisma generate
-npx prisma db push
+npx prisma migrate deploy
 ```
 
 ### 4. Run Development Server
@@ -352,6 +367,39 @@ Open [http://localhost:3000](http://localhost:3000)
 ```bash
 npm test
 ```
+
+---
+
+## 🌐 Deployment
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import the repository at [vercel.com](https://vercel.com)
+3. Set environment variables in Vercel dashboard:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon, Supabase, or Vercel Postgres) |
+| `JWT_SECRET` | Random 32+ character string |
+| `ENCRYPTION_MASTER_KEY` | 64-character hex string |
+| `HORIZON_URL` | `https://horizon-testnet.stellar.org` |
+| `STELLAR_NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` |
+| `SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` |
+
+4. Run initial migration against your production database:
+```bash
+DATABASE_URL="your-production-url" npx prisma migrate deploy
+```
+
+### CI/CD Pipeline
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
+- Runs ESLint
+- Checks Prisma migration drift
+- Runs the full test suite (915 tests)
+- Builds the production bundle
+- Deploys to Vercel on push to `main`
 
 ---
 
@@ -372,13 +420,34 @@ npm test
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/payments/send` | Send XLM (requires PIN) |
-| GET | `/api/payments/history` | Transaction history (paginated, filterable) |
+| GET | `/api/payments/history` | Transaction history (paginated) |
+
+### Smart Contracts
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| POST | `/api/contracts/deploy` | MERCHANT | Deploy a WASM contract |
+| POST | `/api/contracts/invoke` | USER, MERCHANT | Invoke a contract function |
+| POST | `/api/contracts/simulate` | USER, MERCHANT | Simulate a call (read-only) |
+
+### Tokens
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| POST | `/api/tokens/create` | MERCHANT | Create a SEP-41 token |
+| GET | `/api/tokens/balances` | USER, MERCHANT | Get all token balances |
+
+### Liquidity Pools
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| POST | `/api/pools/deposit` | MERCHANT | Deposit into a pool |
+| POST | `/api/pools/withdraw` | MERCHANT | Withdraw from a pool |
+| POST | `/api/pools/swap` | USER, MERCHANT | Swap tokens |
+| GET | `/api/pools/positions` | MERCHANT | Get LP positions |
 
 ### QR Codes
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/qr/static` | Generate static QR (address only) |
-| POST | `/api/qr/dynamic` | Generate dynamic QR (address + amount) |
+| GET | `/api/qr/static` | Generate static QR |
+| POST | `/api/qr/dynamic` | Generate dynamic QR |
 | POST | `/api/qr/parse` | Parse scanned QR payload |
 
 ### Users
@@ -413,17 +482,22 @@ npm test
 
 ```
 stellar-pay/
+├── .github/workflows/ci.yml   # CI/CD pipeline
 ├── prisma/
-│   └── schema.prisma          # Database schema (User, Wallet, Transaction, Contact)
+│   └── schema.prisma          # Database schema
 ├── src/
+│   ├── proxy.ts               # Edge middleware (JWT decode)
 │   ├── app/
 │   │   ├── (auth)/            # Login & registration pages
 │   │   ├── (dashboard)/       # Protected dashboard pages
 │   │   │   ├── admin/         # Admin panel
-│   │   │   ├── merchant/      # Merchant dashboard (QR, analytics)
-│   │   │   └── user/          # User dashboard (send, scan, history)
+│   │   │   ├── merchant/      # Merchant dashboard
+│   │   │   └── user/          # User dashboard
 │   │   └── api/               # API route handlers
 │   │       ├── auth/          # Register, login
+│   │       ├── contracts/     # Deploy, invoke, simulate
+│   │       ├── tokens/        # Create, balances
+│   │       ├── pools/         # Deposit, withdraw, swap, positions
 │   │       ├── payments/      # Send, history
 │   │       ├── wallet/        # Balance & address
 │   │       ├── qr/            # Static, dynamic, parse
@@ -432,80 +506,38 @@ stellar-pay/
 │   │       ├── admin/         # Dashboard, user management
 │   │       └── events/        # SSE stream
 │   ├── components/            # React components
-│   │   ├── BalanceCard.tsx     # Wallet balance display
-│   │   ├── QRScanner.tsx      # Camera-based QR scanner
-│   │   ├── QRCodeDisplay.tsx  # QR code renderer
-│   │   ├── TransactionList.tsx# Transaction history list
-│   │   └── PinGateScreen.tsx  # PIN entry modal
+│   │   ├── TokenBalanceList.tsx
+│   │   ├── LPPositionList.tsx
+│   │   ├── BalanceCard.tsx
+│   │   ├── BottomNav.tsx
+│   │   ├── QRScanner.tsx
+│   │   └── PinGateScreen.tsx
 │   └── lib/
-│       ├── services/          # Business logic layer
-│       │   ├── auth.service.ts
-│       │   ├── wallet.service.ts
-│       │   ├── payment.service.ts
-│       │   ├── stellar.service.ts
-│       │   ├── encryption.service.ts
-│       │   ├── pin.service.ts
-│       │   ├── qr.service.ts
-│       │   ├── notification.service.ts
-│       │   └── contact.service.ts
+│       ├── services/          # Business logic
+│       │   ├── contract.service.ts   # Soroban deploy/invoke/simulate
+│       │   ├── token.service.ts      # SEP-41 token operations
+│       │   ├── pool.service.ts       # Liquidity pool operations
+│       │   ├── stellar.service.ts    # Horizon interactions
+│       │   ├── payment.service.ts    # XLM transfers
+│       │   ├── encryption.service.ts # AES-256-GCM
+│       │   ├── pin.service.ts        # PIN management
+│       │   └── notification.service.ts # SSE + Horizon streaming
 │       ├── middleware/        # Request middleware
-│       │   ├── csrf.ts
-│       │   ├── rate-limiter.ts
-│       │   ├── role-guard.ts
-│       │   └── validator.ts
-│       ├── validators/        # Zod schemas
-│       └── prisma.ts          # Prisma client instance
+│       └── validators/        # Zod schemas
+├── test/setup.ts              # Jest test setup
 └── package.json
-```
-
----
-
-## 🔭 Viewing Transactions on Chain
-
-Every successful payment is recorded on the Stellar blockchain. You can verify transactions using:
-
-### StellarExpert (Block Explorer)
-
-- **Testnet**: [https://stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet)
-- **Mainnet**: [https://stellar.expert/explorer/public](https://stellar.expert/explorer/public)
-
-### Find Your Public Key
-
-Your Stellar address (public key) is stored in the `Wallet` table. Retrieve it via:
-
-```bash
-# Via the API (while authenticated)
-curl -H "Authorization: Bearer <your-jwt>" http://localhost:3000/api/wallet
-# Returns: { "stellarAddress": "GABCD...", "balance": "9999.99" }
-```
-
-### View Account Transactions
-
-```
-https://stellar.expert/explorer/testnet/account/<YOUR_STELLAR_ADDRESS>
-```
-
-### View a Specific Transaction
-
-```
-https://stellar.expert/explorer/testnet/tx/<STELLAR_TX_HASH>
-```
-
-### Horizon API (Direct)
-
-```bash
-# Account details
-curl https://horizon-testnet.stellar.org/accounts/<YOUR_STELLAR_ADDRESS>
-
-# Transaction history
-curl https://horizon-testnet.stellar.org/accounts/<YOUR_STELLAR_ADDRESS>/transactions
 ```
 
 ---
 
 ## 🧪 Testing
 
-The project uses **Jest** for unit/integration tests and **fast-check** for property-based testing.
+915 tests across 63 test suites covering:
+- Service layer unit tests (contract, token, pool, payment, auth, PIN)
+- API route integration tests (all endpoints)
+- Validator tests (all Zod schemas)
+- Component logic tests
+- Property-based tests (fast-check)
 
 ```bash
 # Run all tests
@@ -515,7 +547,20 @@ npm test
 npm run test:watch
 ```
 
-Test files are co-located with their source in `__tests__/` directories.
+---
+
+## 🔭 Viewing Transactions on Chain
+
+Every successful payment is recorded on the Stellar blockchain:
+
+- **Testnet Explorer**: [https://stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet)
+- **Account view**: `https://stellar.expert/explorer/testnet/account/<YOUR_ADDRESS>`
+- **Transaction view**: `https://stellar.expert/explorer/testnet/tx/<TX_HASH>`
+
+```bash
+# Get your Stellar address
+curl -H "Authorization: Bearer <jwt>" http://localhost:3000/api/wallet
+```
 
 ---
 
