@@ -56,7 +56,7 @@ jest.mock('next/server', () => {
 });
 
 // Import the proxy (formerly middleware) after mocking.
-import { proxy as middleware@/proxyroxy';
+import { proxy as middleware } from '@/proxy';
 import { NextRequest } from 'next/server';
 
 // ── Helpers ─────────────────────────────────────────────────────────────

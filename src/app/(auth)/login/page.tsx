@@ -97,11 +97,12 @@ export default function LoginPage() {
       header={
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-600">
             Sign in to your StellarPay account
           </p>
         </div>
       }
+      className="shadow-md border-gray-300"
     >
       {generalError && (
         <div
@@ -122,6 +123,7 @@ export default function LoginPage() {
           error={fieldErrors.email}
           required
           autoComplete="email"
+          className="border-gray-400 focus:border-indigo-600 focus:ring-indigo-600"
         />
 
         <Input
@@ -133,6 +135,7 @@ export default function LoginPage() {
           error={fieldErrors.password}
           required
           autoComplete="current-password"
+          className="border-gray-400 focus:border-indigo-600 focus:ring-indigo-600"
         />
 
         <Button
@@ -145,7 +148,7 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-500">
+      <p className="mt-4 text-center text-sm text-gray-600">
         Don&apos;t have an account?{' '}
         <Link
           href="/register"

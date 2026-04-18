@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { GlassCard } from '@/components/ui/GlassCard';
+import { Card } from '@/components/ui/Card';
 import { CopyButton } from '@/components/CopyButton';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { QRDownloadButton } from '@/components/QRDownloadButton';
@@ -31,7 +31,7 @@ export function ProfileCard({ username, walletId, stellarAddress }: ProfileCardP
   const initial = username.charAt(0).toUpperCase();
 
   return (
-    <GlassCard className="p-6">
+    <Card className="p-6">
       <div className="flex flex-col items-center gap-4">
         {/* Avatar placeholder — initials circle */}
         <div
@@ -42,11 +42,11 @@ export function ProfileCard({ username, walletId, stellarAddress }: ProfileCardP
         </div>
 
         {/* Username */}
-        <h2 className="text-xl font-semibold text-white">{username}</h2>
+        <h2 className="text-xl font-semibold text-gray-900">{username}</h2>
 
         {/* Wallet ID with CopyButton */}
         <div className="flex w-full items-center justify-center gap-2">
-          <span className="truncate text-sm text-gray-300" title={walletId}>
+          <span className="truncate text-sm text-gray-500" title={walletId}>
             {walletId}
           </span>
           <CopyButton value={walletId} label="Copy Wallet ID" />
@@ -54,7 +54,7 @@ export function ProfileCard({ username, walletId, stellarAddress }: ProfileCardP
 
         {/* QR Code encoding the Stellar address */}
         <div ref={qrRef} className="mt-2">
-          <QRCodeDisplay value={stellarAddress} size={200} />
+          <QRCodeDisplay value={stellarAddress ? JSON.stringify({ address: stellarAddress }) : ''} size={200} />
         </div>
 
         {/* QR Download Button */}
@@ -63,7 +63,7 @@ export function ProfileCard({ username, walletId, stellarAddress }: ProfileCardP
           filename={`stellarpe-qr-${username}`}
         />
       </div>
-    </GlassCard>
+    </Card>
   );
 }
 

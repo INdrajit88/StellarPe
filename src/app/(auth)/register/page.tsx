@@ -97,11 +97,12 @@ export default function RegisterPage() {
       header={
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Create account</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-600">
             Get started with StellarPay
           </p>
         </div>
       }
+      className="shadow-md border-gray-300"
     >
       {generalError && (
         <div
@@ -205,7 +206,7 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-500">
+      <p className="mt-4 text-center text-sm text-gray-600">
         Already have an account?{' '}
         <Link
           href="/login"

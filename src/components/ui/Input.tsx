@@ -48,7 +48,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={!!error}
             aria-describedby={errorId}
             className={`
-              block w-full rounded-lg border bg-white px-3 py-2 text-base
+              block w-full rounded-lg border bg-white px-3 py-2 text-base text-gray-900
               placeholder:text-gray-400
               transition-colors duration-150
               focus:outline-none focus:ring-2 focus:ring-offset-0

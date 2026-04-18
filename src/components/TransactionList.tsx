@@ -102,6 +102,14 @@ export function TransactionList({
                     TX: {tx.stellarTxId.slice(0, 12)}...
                   </p>
                   <CopyButton value={tx.stellarTxId} label="Copy transaction ID" />
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${tx.stellarTxId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    View
+                  </a>
                 </div>
               )}
             </div>
