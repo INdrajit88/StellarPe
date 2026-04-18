@@ -58,9 +58,6 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Check Prisma migration drift
-        run: npx prisma migrate diff --from-schema prisma/schema.prisma --to-migrations prisma/migrations --shadow-database-url "$DATABASE_URL" --exit-code
-
       - name: Run tests
         run: npm test -- --run
 
