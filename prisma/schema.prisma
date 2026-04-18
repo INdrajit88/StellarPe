@@ -43,6 +43,10 @@ model User {
   contacts            Contact[]
   sentTransactions    Transaction[] @relation("sender")
   receivedTransactions Transaction[] @relation("recipient")
+  contracts           Contract[]
+  tokens              Token[]
+  lpPositions         LPPosition[]
+  swapTransactions    SwapTransaction[]
 
   @@index([username])
   @@index([email])
@@ -110,4 +114,72 @@ model MerchantProfile {
   updatedAt    DateTime @updatedAt
 
   user         User     @relation(fields: [userId], references: [id])
+}
+
+model Contract {
+  id              String   @id @default(cuid())
+  contractId      String   @unique
+  contractType    String
+  wasmHash        String
+  deployerAddress String
+  deployerId      String
+  deployTxHash    String
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  deployer        User     @relation(fields: [deployerId], references: [id])
+
+  @@index([deployerId])
+  @@index([contractType])
+}
+
+model Token {
+  id          String   @id @default(cuid())
+  contractId  String   @unique
+  name        String
+  symbol      String
+  decimals    Int
+  deployerId  String
+  createdAt   DateTime @default(now())
+
+  deployer    User     @relation(fields: [deployerId], references: [id])
+
+  @@index([deployerId])
+  @@index([symbol])
+}
+
+model LPPosition {
+  id               String   @id @default(cuid())
+  poolContractId   String
+  merchantId       String
+  shares           Decimal  @db.Decimal(38, 0)
+  tokenAContractId String
+  tokenBContractId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  merchant         User     @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId])
+  @@index([poolContractId])
+  @@unique([poolContractId, merchantId])
+}
+
+model SwapTransaction {
+  id              String   @id @default(cuid())
+  poolContractId  String
+  userId          String
+  inputToken      String
+  outputToken     String
+  inputAmount     Decimal  @db.Decimal(38, 18)
+  outputAmount    Decimal  @db.Decimal(38, 18)
+  feeAmount       Decimal  @db.Decimal(38, 18)
+  stellarTxHash   String?  @unique
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([poolContractId])
+  @@index([createdAt])
 }

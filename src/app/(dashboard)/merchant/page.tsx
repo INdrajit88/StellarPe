@@ -6,6 +6,8 @@ import { BalanceCard } from '@/components/BalanceCard';
 import { TransactionList, Transaction } from '@/components/TransactionList';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { Card } from '@/components/ui/Card';
+import { TokenBalanceList, TokenBalance } from '@/components/TokenBalanceList';
+import { LPPositionList, LPPosition } from '@/components/LPPositionList';
 
 /**
  * Merchant Dashboard page.
@@ -23,6 +25,16 @@ export default function MerchantDashboardPage() {
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Token balances state (Requirement 10.1)
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
+  const [tokenBalancesLoading, setTokenBalancesLoading] = useState(true);
+  const tokenBalancesFetchedAtRef = useRef<number>(0);
+
+  // LP positions state (Requirement 10.2)
+  const [lpPositions, setLpPositions] = useState<LPPosition[]>([]);
+  const [lpPositionsLoading, setLpPositionsLoading] = useState(true);
+  const lpPositionsFetchedAtRef = useRef<number>(0);
 
   const fetchWallet = useCallback(async () => {
     try {
@@ -90,6 +102,56 @@ export default function MerchantDashboardPage() {
     }
   }, []);
 
+  /** Fetch token balances with 60-second staleness window (Requirement 10.4) */
+  const fetchTokenBalances = useCallback(async () => {
+    const now = Date.now();
+    if (now - tokenBalancesFetchedAtRef.current < 60_000) return;
+
+    setTokenBalancesLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/tokens/balances', {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTokenBalances(data.balances || data || []);
+        tokenBalancesFetchedAtRef.current = Date.now();
+      }
+    } catch {
+      // Show empty state on error
+      setTokenBalances([]);
+    } finally {
+      setTokenBalancesLoading(false);
+    }
+  }, []);
+
+  /** Fetch LP positions with 60-second staleness window (Requirement 10.4) */
+  const fetchLpPositions = useCallback(async () => {
+    const now = Date.now();
+    if (now - lpPositionsFetchedAtRef.current < 60_000) return;
+
+    setLpPositionsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/pools/positions', {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLpPositions(data.positions || data || []);
+        lpPositionsFetchedAtRef.current = Date.now();
+      }
+    } catch {
+      // Show empty state on error
+      setLpPositions([]);
+    } finally {
+      setLpPositionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -103,7 +165,9 @@ export default function MerchantDashboardPage() {
 
     fetchWallet();
     fetchTransactions();
-  }, [fetchWallet, fetchTransactions]);
+    fetchTokenBalances();
+    fetchLpPositions();
+  }, [fetchWallet, fetchTransactions, fetchTokenBalances, fetchLpPositions]);
 
   // SSE listener for real-time payment notifications
   useEffect(() => {
@@ -189,6 +253,56 @@ export default function MerchantDashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Custom Tokens (Requirement 10.1) */}
+      <Card className="mt-6">
+        <h2 className="mb-3 text-base font-semibold text-gray-900">
+          Custom Tokens
+        </h2>
+        {tokenBalancesLoading ? (
+          <div className="space-y-3 py-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex animate-pulse items-center justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="h-3 w-24 rounded bg-gray-200" />
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                </div>
+                <div className="h-4 w-20 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <TokenBalanceList balances={tokenBalances} />
+        )}
+      </Card>
+
+      {/* LP Positions (Requirement 10.2) */}
+      <Card className="mt-6">
+        <h2 className="mb-3 text-base font-semibold text-gray-900">
+          Liquidity Pool Positions
+        </h2>
+        {lpPositionsLoading ? (
+          <div className="space-y-3 py-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex animate-pulse items-center justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="h-3 w-28 rounded bg-gray-200" />
+                  <div className="h-3 w-20 rounded bg-gray-200" />
+                </div>
+                <div className="h-4 w-24 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <LPPositionList positions={lpPositions} />
+        )}
+      </Card>
 
       {/* Recent Transactions */}
       <Card className="mt-6">

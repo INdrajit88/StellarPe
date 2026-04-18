@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BalanceCard } from '@/components/BalanceCard';
 import { TransactionList, Transaction } from '@/components/TransactionList';
 import { Card } from '@/components/ui/Card';
+import { TokenBalanceList, TokenBalance } from '@/components/TokenBalanceList';
 
 /**
  * User Dashboard page.
@@ -24,6 +25,11 @@ export default function UserDashboardPage() {
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Token balances state (Requirement 10.3)
+  const [tokenBalances, setTokenBalances] = useState<TokenBalance[]>([]);
+  const [tokenBalancesLoading, setTokenBalancesLoading] = useState(true);
+  const tokenBalancesFetchedAtRef = useRef<number>(0);
 
   const fetchRecentTransactions = useCallback(async () => {
     try {
@@ -44,6 +50,31 @@ export default function UserDashboardPage() {
     }
   }, []);
 
+  /** Fetch token balances with 60-second staleness window (Requirement 10.4) */
+  const fetchTokenBalances = useCallback(async () => {
+    const now = Date.now();
+    if (now - tokenBalancesFetchedAtRef.current < 60_000) return;
+
+    setTokenBalancesLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/tokens/balances', {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTokenBalances(data.balances || data || []);
+        tokenBalancesFetchedAtRef.current = Date.now();
+      }
+    } catch {
+      // Show empty state on error
+      setTokenBalances([]);
+    } finally {
+      setTokenBalancesLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // Get user ID from localStorage
     const userStr = localStorage.getItem('user');
@@ -57,7 +88,8 @@ export default function UserDashboardPage() {
     }
 
     fetchRecentTransactions();
-  }, [fetchRecentTransactions]);
+    fetchTokenBalances();
+  }, [fetchRecentTransactions, fetchTokenBalances]);
 
   // SSE listener for real-time payment notifications
   useEffect(() => {
@@ -93,6 +125,31 @@ export default function UserDashboardPage() {
 
       {/* Balance Card */}
       <BalanceCard />
+
+      {/* Custom Tokens (Requirement 10.3) */}
+      <Card className="mt-6">
+        <h2 className="mb-3 text-base font-semibold text-gray-900">
+          Custom Tokens
+        </h2>
+        {tokenBalancesLoading ? (
+          <div className="space-y-3 py-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex animate-pulse items-center justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="h-3 w-24 rounded bg-gray-200" />
+                  <div className="h-3 w-16 rounded bg-gray-200" />
+                </div>
+                <div className="h-4 w-20 rounded bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <TokenBalanceList balances={tokenBalances} />
+        )}
+      </Card>
 
       {/* Quick-pay actions */}
       <div className="mt-6 grid grid-cols-3 gap-3">

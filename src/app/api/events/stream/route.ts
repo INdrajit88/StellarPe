@@ -19,7 +19,12 @@
  * - 403: Role not authorized
  * - 500: Unexpected server error
  *
- * @see Requirements 5.3 (push SSE notifications to active browser session)
+ * @see Requirements 11.1 (SSE endpoint accepts authenticated GET, returns text/event-stream)
+ * @see Requirements 11.2 (initial "connected" event with userId and timestamp)
+ * @see Requirements 11.3 (push "payment_received" event via NotificationService)
+ * @see Requirements 11.4 (unsubscribe on client disconnect)
+ * @see Requirements 11.5 (exponential backoff reconnection in NotificationService)
+ * @see Requirements 11.6 (one active SSE connection per user)
  */
 
 import { requireRole } from '@/lib/middleware/role-guard';

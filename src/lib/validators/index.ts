@@ -41,3 +41,26 @@ export {
   type AccountStatusUpdateInput,
   type UserSearchInput,
 } from './admin.validator';
+
+export {
+  deployContractSchema,
+  invokeContractSchema,
+  simulateContractSchema,
+  type DeployContractInput,
+  type InvokeContractInput,
+  type SimulateContractInput,
+} from './contract.validator';
+
+export {
+  createTokenSchema,
+  type CreateTokenInput,
+} from './token.validator';
+
+export {
+  depositSchema,
+  withdrawSchema,
+  swapSchema,
+  type DepositInput,
+  type WithdrawInput,
+  type SwapInput,
+} from './pool.validator';

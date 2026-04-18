@@ -357,3 +357,200 @@ describe('Admin Validators', () => {
     });
   });
 });
+
+import {
+  deployContractSchema,
+  invokeContractSchema,
+  simulateContractSchema,
+} from '../contract.validator';
+
+describe('Contract Validators', () => {
+  describe('deployContractSchema', () => {
+    it('accepts valid deploy request with wasmBase64', () => {
+      const result = deployContractSchema.safeParse({
+        wasmBase64: 'AGFzbQEAAAA=',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts deploy request with constructorArgs', () => {
+      const result = deployContractSchema.safeParse({
+        wasmBase64: 'AGFzbQEAAAA=',
+        constructorArgs: ['arg1', 42],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects empty wasmBase64', () => {
+      const result = deployContractSchema.safeParse({
+        wasmBase64: '',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing wasmBase64', () => {
+      const result = deployContractSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts deploy request without constructorArgs', () => {
+      const result = deployContractSchema.safeParse({
+        wasmBase64: 'AGFzbQEAAAA=',
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.constructorArgs).toBeUndefined();
+      }
+    });
+  });
+
+  describe('invokeContractSchema', () => {
+    it('accepts valid invoke request', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'transfer',
+        args: ['addr1', 'addr2', 100],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts invoke request with subAuth', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'swap',
+        args: [100],
+        subAuth: [
+          {
+            contractId: 'CTOKEN1',
+            functionName: 'transfer',
+            args: ['from', 'to', 50],
+          },
+        ],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects missing contractId', () => {
+      const result = invokeContractSchema.safeParse({
+        functionName: 'transfer',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects empty contractId', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: '',
+        functionName: 'transfer',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing functionName', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects empty functionName', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: '',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing args', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'transfer',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts empty args array', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'get_balance',
+        args: [],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts invoke request without subAuth', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'transfer',
+        args: [100],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.subAuth).toBeUndefined();
+      }
+    });
+
+    it('rejects subAuth with empty contractId', () => {
+      const result = invokeContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'swap',
+        args: [],
+        subAuth: [
+          {
+            contractId: '',
+            functionName: 'transfer',
+            args: [],
+          },
+        ],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('simulateContractSchema', () => {
+    it('accepts valid simulate request', () => {
+      const result = simulateContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'balance',
+        args: ['addr1'],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects missing contractId', () => {
+      const result = simulateContractSchema.safeParse({
+        functionName: 'balance',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing functionName', () => {
+      const result = simulateContractSchema.safeParse({
+        contractId: 'CABC123',
+        args: [],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects missing args', () => {
+      const result = simulateContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'balance',
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it('accepts empty args array', () => {
+      const result = simulateContractSchema.safeParse({
+        contractId: 'CABC123',
+        functionName: 'get_total_supply',
+        args: [],
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+});

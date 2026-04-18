@@ -1,5 +1,9 @@
 'use client';
 
+// Requirements 12.1–12.7: Mobile Responsive Design — Bottom navigation bar with
+// role-specific items, fixed positioning, indigo-600 active highlighting,
+// exact-match/prefix-match route detection, and mobile-first responsive layout.
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 

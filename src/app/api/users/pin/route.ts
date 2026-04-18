@@ -46,8 +46,8 @@ export async function POST(request: Request) {
     const userId = request.headers.get('x-user-id');
     const userRole = request.headers.get('x-user-role');
 
-    // Step 3: Role guard — only USER can set a PIN.
-    const roleGuard = requireRole('USER');
+    // Step 3: Role guard — USER and MERCHANT can set a PIN.
+    const roleGuard = requireRole('USER', 'MERCHANT');
     const roleError = roleGuard(userRole);
     if (roleError) {
       return roleError;
@@ -107,8 +107,8 @@ export async function PUT(request: Request) {
     const userId = request.headers.get('x-user-id');
     const userRole = request.headers.get('x-user-role');
 
-    // Step 3: Role guard — only USER can reset a PIN.
-    const roleGuard = requireRole('USER');
+    // Step 3: Role guard — USER and MERCHANT can reset a PIN.
+    const roleGuard = requireRole('USER', 'MERCHANT');
     const roleError = roleGuard(userRole);
     if (roleError) {
       return roleError;
